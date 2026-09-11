@@ -118,7 +118,7 @@ thiện cụ thể và mô tả ngắn cách triển khai:**
 
 ## Danh Sách Kiểm Tra Nộp Bài
 
-- [x] `python grade.py` — xem điểm tự động, mục tiêu ≥ 75/100
-- [x] Cả 4 checkpoint pytest đều pass
-- [x] Tất cả 9 câu trong file này đã được trả lời
-- [x] Đã copy bài làm vào folder `solution/`, push lên fork và dán link trên trang bài Lab ở VLearn trước 23:59 ngày 11/09/2026
+- [ ] `python grade.py` — xem điểm tự động, mục tiêu ≥ 75/100
+- [ ] Cả 4 checkpoint pytest đều pass
+- [ ] Tất cả 9 câu trong file này đã được trả lời
+- [ ] Đã copy bài làm vào folder `solution/`, push lên fork và dán link trên trang bài Lab ở VLearn trước 23:59 ngày 11/09/2026

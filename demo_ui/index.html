@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K4 Day 1 — LLM API Explorer</title>
+    <meta name="description" content="Interactive demo for K4 Day 1 LLM API exercises — explore GPT-4o, temperature, system prompts, streaming, and cost estimation.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ───────────────── HEADER ───────────────── -->
+    <header class="header" id="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <circle cx="14" cy="14" r="12" stroke="url(#lg)" stroke-width="2.5"/>
+                        <path d="M9 14l3 3 7-7" stroke="url(#lg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs><linearGradient id="lg" x1="0" y1="0" x2="28" y2="28"><stop stop-color="#818cf8"/><stop offset="1" stop-color="#c084fc"/></linearGradient></defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1>LLM API Explorer</h1>
+                    <p class="subtitle">K4 — Day 1 Interactive Demo</p>
+                </div>
+            </div>
+            <nav class="nav" id="nav">
+                <button class="nav-btn active" data-tab="playground">
+                    <span class="nav-icon">⚡</span> Playground
+                </button>
+                <button class="nav-btn" data-tab="compare">
+                    <span class="nav-icon">⚖️</span> So sánh
+                </button>
+                <button class="nav-btn" data-tab="persona">
+                    <span class="nav-icon">🎭</span> Persona
+                </button>
+                <button class="nav-btn" data-tab="temperature">
+                    <span class="nav-icon">🌡️</span> Temperature
+                </button>
+                <button class="nav-btn" data-tab="tokens">
+                    <span class="nav-icon">🔢</span> Tokens
+                </button>
+                <button class="nav-btn" data-tab="chat">
+                    <span class="nav-icon">💬</span> Chat
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main" id="main">
+
+        <!-- ═══════════════ TAB: PLAYGROUND ═══════════════ -->
+        <section class="tab-panel active" id="tab-playground">
+            <div class="panel-header">
+                <h2>⚡ API Playground</h2>
+                <p>Gọi trực tiếp GPT-4o hoặc GPT-4o-mini và xem kết quả realtime</p>
+            </div>
+            <div class="card-grid two-col">
+                <div class="card glass">
+                    <h3>Cấu hình</h3>
+                    <div class="form-group">
+                        <label for="pg-model">Model</label>
+                        <select id="pg-model" class="select model-select">
+                            <option value="gpt-4o">gpt-4o</option>
+                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pg-temp">Temperature <span class="badge" id="pg-temp-val">0.7</span></label>
+                        <input type="range" id="pg-temp" class="slider" min="0" max="2" step="0.1" value="0.7">
+                    </div>
+                    <div class="form-group">
+                        <label for="pg-topp">Top P <span class="badge" id="pg-topp-val">0.9</span></label>
+                        <input type="range" id="pg-topp" class="slider" min="0" max="1" step="0.05" value="0.9">
+                    </div>
+                    <div class="form-group">
+                        <label for="pg-maxtokens">Max Tokens <span class="badge" id="pg-maxtokens-val">256</span></label>
+                        <input type="range" id="pg-maxtokens" class="slider" min="32" max="2048" step="32" value="256">
+                    </div>
+                    <div class="form-group">
+                        <label for="pg-prompt">Prompt</label>
+                        <textarea id="pg-prompt" class="textarea" rows="4" placeholder="Nhập prompt của bạn tại đây...">Hãy kể cho tôi một sự thật thú vị về Việt Nam.</textarea>
+                    </div>
+                    <button class="btn btn-primary" id="pg-send" onclick="playgroundSend()">
+                        <span class="btn-icon">🚀</span> Gửi yêu cầu
+                    </button>
+                </div>
+                <div class="card glass">
+                    <h3>Kết quả</h3>
+                    <div class="result-stats" id="pg-stats" style="display:none;">
+                        <div class="stat">
+                            <span class="stat-label">Latency</span>
+                            <span class="stat-value" id="pg-latency">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Tokens In</span>
+                            <span class="stat-value" id="pg-tokens-in">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Tokens Out</span>
+                            <span class="stat-value" id="pg-tokens-out">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Chi phí</span>
+                            <span class="stat-value" id="pg-cost">—</span>
+                        </div>
+                    </div>
+                    <div class="response-box" id="pg-response">
+                        <div class="placeholder-text">Kết quả sẽ hiển thị tại đây...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ TAB: COMPARE ═══════════════ -->
+        <section class="tab-panel" id="tab-compare">
+            <div class="panel-header">
+                <h2>⚖️ So sánh GPT-4o vs GPT-4o-mini</h2>
+                <p>Gửi cùng một prompt đến cả hai model và so sánh chất lượng, tốc độ, chi phí</p>
+            </div>
+            <div class="card glass" style="max-width: 700px; margin: 0 auto 2rem;">
+                <div class="form-group">
+                    <label for="cmp-prompt">Prompt</label>
+                    <textarea id="cmp-prompt" class="textarea" rows="3" placeholder="Nhập prompt để so sánh...">Giải thích machine learning cho một học sinh lớp 5.</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="compareSend()">
+                    <span class="btn-icon">⚖️</span> So sánh hai model
+                </button>
+            </div>
+            <div class="card-grid two-col" id="cmp-results" style="display:none;">
+                <div class="card glass card-gpt4o">
+                    <div class="model-badge gpt4o">GPT-4o</div>
+                    <div class="result-stats">
+                        <div class="stat">
+                            <span class="stat-label">Latency</span>
+                            <span class="stat-value" id="cmp-lat4o">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Chi phí</span>
+                            <span class="stat-value" id="cmp-cost4o">—</span>
+                        </div>
+                    </div>
+                    <div class="response-box" id="cmp-resp4o"></div>
+                </div>
+                <div class="card glass card-mini">
+                    <div class="model-badge mini">GPT-4o-mini</div>
+                    <div class="result-stats">
+                        <div class="stat">
+                            <span class="stat-label">Latency</span>
+                            <span class="stat-value" id="cmp-latmini">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Chi phí</span>
+                            <span class="stat-value mini-text" id="cmp-costmini">—</span>
+                        </div>
+                    </div>
+                    <div class="response-box" id="cmp-respmini"></div>
+                </div>
+            </div>
+            <div class="card glass" id="cmp-chart-card" style="display:none; max-width:700px; margin:2rem auto 0;">
+                <h3>📊 Biểu đồ so sánh</h3>
+                <div class="bar-chart" id="cmp-chart"></div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ TAB: PERSONA ═══════════════ -->
+        <section class="tab-panel" id="tab-persona">
+            <div class="panel-header">
+                <h2>🎭 System Prompt — Persona</h2>
+                <p>Thay đổi "tính cách" của AI bằng cách đặt system prompt khác nhau</p>
+            </div>
+            <div class="card-grid two-col">
+                <div class="card glass">
+                    <h3>Cấu hình</h3>
+                    <div class="form-group">
+                        <label>Persona nhanh</label>
+                        <div class="persona-chips">
+                            <button class="chip active" onclick="setPersona(this, 'Bạn là giáo viên tiểu học, giải thích mọi thứ thật đơn giản bằng tiếng Việt.')">👩‍🏫 Giáo viên</button>
+                            <button class="chip" onclick="setPersona(this, 'Bạn là cướp biển vui tính, luôn nói chuyện bằng giọng cướp biển hài hước.')">🏴‍☠️ Cướp biển</button>
+                            <button class="chip" onclick="setPersona(this, 'Bạn là nhà thơ lãng mạn, trả lời mọi câu hỏi bằng thơ.')">🎭 Nhà thơ</button>
+                            <button class="chip" onclick="setPersona(this, 'Bạn là Sherlock Holmes, phân tích mọi thứ một cách logic và sắc bén.')">🔍 Sherlock</button>
+                            <button class="chip" onclick="setPersona(this, 'Bạn là Gordon Ramsay, nổi tiếng với phong cách phê bình thẳng thắn nhưng hài hước.')">👨‍🍳 Chef</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="persona-system">System Prompt</label>
+                        <textarea id="persona-system" class="textarea" rows="3">Bạn là giáo viên tiểu học, giải thích mọi thứ thật đơn giản bằng tiếng Việt.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="persona-user">User Prompt</label>
+                        <textarea id="persona-user" class="textarea" rows="3" placeholder="Nhập câu hỏi...">Tại sao bầu trời có màu xanh?</textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="personaSend()">
+                        <span class="btn-icon">🎭</span> Gửi với persona
+                    </button>
+                </div>
+                <div class="card glass">
+                    <h3>Phản hồi</h3>
+                    <div class="result-stats" id="persona-stats" style="display:none;">
+                        <div class="stat">
+                            <span class="stat-label">Latency</span>
+                            <span class="stat-value" id="persona-latency">—</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Chi phí</span>
+                            <span class="stat-value" id="persona-cost">—</span>
+                        </div>
+                    </div>
+                    <div class="response-box" id="persona-response">
+                        <div class="placeholder-text">Chọn persona và gửi câu hỏi...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ TAB: TEMPERATURE ═══════════════ -->
+        <section class="tab-panel" id="tab-temperature">
+            <div class="panel-header">
+                <h2>🌡️ Temperature Explorer</h2>
+                <p>Xem trực quan tác động của temperature lên câu trả lời</p>
+            </div>
+            <div class="card glass" style="max-width:700px; margin:0 auto 2rem;">
+                <div class="form-group">
+                    <label for="temp-prompt">Prompt (giữ nguyên cho tất cả)</label>
+                    <textarea id="temp-prompt" class="textarea" rows="2">Hãy kể cho tôi một sự thật thú vị về Việt Nam.</textarea>
+                </div>
+                <button class="btn btn-primary" onclick="temperatureTest()">
+                    <span class="btn-icon">🌡️</span> Chạy 4 mức (0.0, 0.5, 1.0, 1.5)
+                </button>
+            </div>
+            <div class="card-grid four-col" id="temp-results">
+                <div class="card glass temp-card" id="temp-card-0">
+                    <div class="temp-header">
+                        <span class="temp-badge cold">0.0</span>
+                        <span class="temp-label">Deterministic</span>
+                    </div>
+                    <div class="temp-bar"><div class="temp-fill" style="width:0%"></div></div>
+                    <div class="response-box small" id="temp-resp-0"><div class="placeholder-text">Đang chờ...</div></div>
+                </div>
+                <div class="card glass temp-card" id="temp-card-1">
+                    <div class="temp-header">
+                        <span class="temp-badge warm">0.5</span>
+                        <span class="temp-label">Balanced</span>
+                    </div>
+                    <div class="temp-bar"><div class="temp-fill" style="width:33%"></div></div>
+                    <div class="response-box small" id="temp-resp-1"><div class="placeholder-text">Đang chờ...</div></div>
+                </div>
+                <div class="card glass temp-card" id="temp-card-2">
+                    <div class="temp-header">
+                        <span class="temp-badge hot">1.0</span>
+                        <span class="temp-label">Creative</span>
+                    </div>
+                    <div class="temp-bar"><div class="temp-fill" style="width:66%"></div></div>
+                    <div class="response-box small" id="temp-resp-2"><div class="placeholder-text">Đang chờ...</div></div>
+                </div>
+                <div class="card glass temp-card" id="temp-card-3">
+                    <div class="temp-header">
+                        <span class="temp-badge fire">1.5</span>
+                        <span class="temp-label">Wild</span>
+                    </div>
+                    <div class="temp-bar"><div class="temp-fill" style="width:100%"></div></div>
+                    <div class="response-box small" id="temp-resp-3"><div class="placeholder-text">Đang chờ...</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ TAB: TOKENS ═══════════════ -->
+        <section class="tab-panel" id="tab-tokens">
+            <div class="panel-header">
+                <h2>🔢 Token Counter & Cost Estimator</h2>
+                <p>Đếm token chính xác bằng tiktoken và ước tính chi phí</p>
+            </div>
+            <div class="card-grid two-col">
+                <div class="card glass">
+                    <h3>Nhập văn bản</h3>
+                    <div class="form-group">
+                        <label for="tok-text">Văn bản cần đếm</label>
+                        <textarea id="tok-text" class="textarea" rows="6" placeholder="Nhập hoặc dán văn bản..." oninput="tokenCountLive()">Xin chào! Đây là một ví dụ về cách đếm token bằng tiktoken. Mỗi từ tiếng Việt có thể tạo ra nhiều token hơn tiếng Anh vì bộ tokenizer được huấn luyện chủ yếu trên dữ liệu tiếng Anh.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="tok-model">Model</label>
+                        <select id="tok-model" class="select model-select" onchange="tokenCountLive()">
+                            <option value="gpt-4o">gpt-4o</option>
+                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card glass">
+                    <h3>Kết quả phân tích</h3>
+                    <div class="token-stats">
+                        <div class="token-stat-big">
+                            <span class="token-number" id="tok-count">0</span>
+                            <span class="token-unit">tokens</span>
+                        </div>
+                        <div class="result-stats">
+                            <div class="stat">
+                                <span class="stat-label">Ký tự</span>
+                                <span class="stat-value" id="tok-chars">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Từ</span>
+                                <span class="stat-value" id="tok-words">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">Chars/Token</span>
+                                <span class="stat-value" id="tok-ratio">—</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cost-table">
+                        <h4>💰 Ước tính chi phí (nếu dùng làm input)</h4>
+                        <table>
+                            <thead>
+                                <tr><th>Model</th><th>Giá / 1K tokens</th><th>Chi phí</th></tr>
+                            </thead>
+                            <tbody id="tok-cost-body">
+                                <tr><td>GPT-4o</td><td>$0.0025</td><td id="tok-cost-4o">—</td></tr>
+                                <tr><td>GPT-4o-mini</td><td>$0.00015</td><td id="tok-cost-mini">—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════════════ TAB: CHAT ═══════════════ -->
+        <section class="tab-panel" id="tab-chat">
+            <div class="panel-header">
+                <h2>💬 Streaming Chat</h2>
+                <p>Trò chuyện trực tiếp với GPT-4o qua streaming — token xuất hiện từng chút một</p>
+            </div>
+            <div class="chat-container card glass">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-welcome">
+                        <div class="chat-welcome-icon">🤖</div>
+                        <h3>Xin chào!</h3>
+                        <p>Tôi là trợ lý AI. Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện streaming.</p>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="chat-input" class="textarea chat-textarea" rows="1" placeholder="Nhập tin nhắn..." onkeydown="chatKeydown(event)"></textarea>
+                    <button class="btn btn-primary btn-send" onclick="chatSend()" id="chat-send-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ───────────────── LOADING OVERLAY ───────────────── -->
+    <div class="loading-overlay" id="loading-overlay" style="display:none;">
+        <div class="spinner"></div>
+        <p id="loading-text">Đang gọi API...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
